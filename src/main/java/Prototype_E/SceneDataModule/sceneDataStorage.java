@@ -6,63 +6,126 @@ package Prototype_E.SceneDataModule;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.Scanner;
 
 public class sceneDataStorage {
-    int imageN = 5;
-    int mapX, mapY;
-    int mapRow, mapCol;
-    int mapBlockSize = 100;
-    int tmp;
+    private int mapBlockSize, maxImageTypes;
+    private int mapW, mapH, mapRow, mapCol;
 
-    private java.awt.Image[] imageArr;
+    private String mapPath, imagePath, imageSub, imageData;
+
     protected int[][] mapArr;
+    private java.awt.Image[] imageArr;
 
-    public sceneDataStorage () {
-        try {
-            loadMap("/maps/MainMap.txt");
-            loadImage("/images", ".jpg", 5);
-        } catch (Exception e) {}
+    public sceneDataStorage (String mPath, String iPath, String iSub, String iData) {
+        mapPath = mPath;
+        imagePath = iPath;
+        imageSub = iSub;
+        imageData = iData;
     }
 
-    public void loadMap (String mapFile) throws Exception {
-        File file = new File (sceneDataStorage.class.getResource(mapFile).toURI());
-        Scanner in = new Scanner (file);
+    public void loadAll () throws Exception {
+        loadImage ();
+        loadMap ();
+    }
+
+    public void loadMap () throws Exception {
+        if (imageArr == null) { throw new NullPointerException("Image should be preloaded."); }
+
+        int tmp;
+        File file;
+        Scanner in;
+
+        file = new File (sceneDataStorage.class.getResource(mapPath).toURI());
+        in = new Scanner (file);
+
         tmp = in.nextInt();
         if (tmp <= 0) { throw new IndexOutOfBoundsException ("Index is too small"); }
         mapRow = tmp;
-        mapX = mapBlockSize * mapRow;
+        mapW = mapBlockSize * mapRow;
+
         tmp = in.nextInt();
         if (tmp <= 0) { throw new IndexOutOfBoundsException ("Index is too small"); }
         mapCol = tmp;
-        mapY = mapBlockSize * mapCol;
+        mapH = mapBlockSize * mapCol;
 
         mapArr = new int[mapRow][mapCol];
-        for (int i = 0; i < mapRow; ++ i) {
-            for (int j = 0; j < mapCol; ++ j) {
+        for (int i = 0, j; i < mapRow; ++ i) {
+            for (j = 0; j < mapCol; ++ j) {
                 tmp = in.nextInt();
-                if (tmp < 1 || tmp > imageN) { throw new IndexOutOfBoundsException("Not such image index found."); }
+                if (tmp < 1 || tmp > maxImageTypes) { throw new IndexOutOfBoundsException("Not such image index found."); }
                 mapArr[i][j] = tmp;
             }
         }
     }
 
-    public void loadImage (String base, String sub, int num) throws FileNotFoundException {
+    public void loadImage () throws Exception {
+        int imageBegin, imageEnd, tmp;
         String fname;
-        imageArr = new Image[num];
-        for (int i = 0; i < num; ++ i) {
-            fname = base + Integer.toString(i + 1) + sub;
-            try {
-                imageArr[i] = ImageIO.read(new File(fname));
-            } catch (IOException e) {}
+        File file;
+        Scanner in;
+
+        fname = imagePath + imageData;
+        file = new File (sceneDataStorage.class.getResource(fname).toURI());
+        in = new Scanner (file);
+
+        imageBegin = in.nextInt();
+        imageEnd = in.nextInt();
+        mapBlockSize = in.nextInt();
+        maxImageTypes = imageEnd - imageBegin + 1;
+        in.close();
+
+        imageArr = new Image[maxImageTypes];
+        tmp = 0;
+        for (int i = imageBegin; i <= imageEnd; ++ i) {
+            fname = imagePath + Integer.toString(i) + imageSub;
+            imageArr[tmp] = ImageIO.read (new File(sceneDataStorage.class.getResource(fname).toURI()));
+            ++ tmp;
         }
     }
 
-    public Image getImage (int y, int x) {
+    public Image getImage (int y, int x) throws NullPointerException {
+        if ( imageArr == null) {
+            throw new NullPointerException ("Images are not loaded.");
+        }
         return imageArr[mapArr[y][x] - 1];
+    }
+
+    public void setMapPath (String str) {
+        mapPath = str;
+    }
+
+    public void setImagePath (String str) {
+        imagePath = str;
+    }
+
+    public void setImageSub (String str) {
+        imageSub = str;
+    }
+    public void setImageDataFileName (String str) {
+        imageData = str;
+    }
+
+    public int getMaxImageTypes () {
+        return maxImageTypes;
+    }
+
+    public int getMapBlockSize () {
+        return mapBlockSize;
+    }
+
+    public Image getSampleImage () {
+        return imageArr[0];
+    }
+
+    public boolean ImageLoaded () {
+        if (imageArr != null) { return true; }
+        else { return false; }
+    }
+
+    public int getImageArrSize () {
+        return imageArr.length;
     }
 
     public int getImageType (int y, int x) {
@@ -77,15 +140,12 @@ public class sceneDataStorage {
         return mapCol;
     }
 
-    public int getMapBlockSize () {
-        return mapBlockSize;
+    public int getMapW  () {
+        return mapW;
     }
 
-    public int getMapX  () {
-        return mapX;
+    public int getMapH  () {
+        return mapH;
     }
 
-    public int getMapY  () {
-        return mapY;
-    }
 }

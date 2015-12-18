@@ -1,17 +1,19 @@
 package Prototype_E.SceneRenderEngine;
 
+/**
+ * Created by User on 2015/12/17.
+ */
+
 import Prototype_E.SceneDataModule.sceneDataStorage;
 import Prototype_E.DynamicObjectModule.dynamicObjectModule;
 
 import java.awt.*;
 
-/**
- * Created by User on 2015/12/17.
- */
 public class sceneRenderEngine {
     private sceneDataStorage storage;
     private dynamicObjectModule dom;
     private Graphics2D grap;
+    private int bSize;
     double viewW, viewH;
 
     public sceneRenderEngine (Graphics2D g, double x, double y) {
@@ -22,12 +24,17 @@ public class sceneRenderEngine {
 
     public void renderScene () throws Exception {
         if(this.dom == null) { throw new NullPointerException("Error: No DOM Link Exist."); }
-        if (viewW > storage.getMapX() || viewH > storage.getMapY()) { throw new Exception ("Error: View width or view height is bigger than the map."); }
+        if (viewW > storage.getMapW() || viewH > storage.getMapH()) { throw new Exception ("Error: View width or view height is bigger than the map."); }
         Point charXY = dom.getVirtualCharacterXY();
         if (charXY == null) { throw new NullPointerException ("Error: Character location is invalid."); }
         double x = charXY.getX();
         double y = charXY.getY();
-        double lbx, lby, ubx, uby, begx, begy, bSize = storage.getMapBlockSize();
+        double lbx, lby, ubx, uby, begx, begy;
+
+        if (x - viewW / 2 < 0) { throw new IndexOutOfBoundsException("Error: View Window is out of bound."); }
+        if (y - viewH / 2 < 0) { throw new IndexOutOfBoundsException("Error: View Window is out of bound."); }
+        if (x + viewW / 2 > storage.getMapW()) { throw new IndexOutOfBoundsException("Error: View Window is out of bound."); }
+        if (y + viewH / 2 > storage.getMapH()) { throw new IndexOutOfBoundsException("Error: View Window is out of bound."); }
 
         lbx = x - viewW / 2 - (x - viewW / 2) % bSize;
         lby = y - viewH / 2 - (y - viewH / 2) % bSize;
@@ -59,6 +66,7 @@ public class sceneRenderEngine {
 
     public void setSDM (sceneDataStorage outst) {
         this.storage = outst;
+        this.bSize = outst.getMapBlockSize();
     }
 
     public void setDOM (dynamicObjectModule d) {
